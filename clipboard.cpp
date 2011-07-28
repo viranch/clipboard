@@ -144,10 +144,17 @@ void ClipBoard::receiveData()
     char data[MAX_DATA_SIZE];
     int len = in.readRawData(data, MAX_DATA_SIZE);
     data[len] = '\0';
+    QString string(data);
+    QRegExp rx_msg("0x1d0x1e0x1f0x01(.*)0x1f0x1e0x1d");
+    rx_msg.indexIn(string);
+    QString msg = rx_msg.cap(1);
+    if (msg.isEmpty())
+        return;
+
     QString now = QDateTime::currentDateTime().toString("MMM d, h:mmap");
     QStringList columns;
     QString nick = m_people[m_tcpClient->peerAddress().toString()];
-    columns << nick << QString(data).trimmed() << now;
+    columns << nick << msg.trimmed() << now;
     QTreeWidgetItem *item = new QTreeWidgetItem(ui->incomingList, columns);
     m_tray->showMessage("Incoming text", "Sender: "+nick);
 }
@@ -278,7 +285,10 @@ void ClipBoard::on_pasteButton_clicked()
     // prepare the data to be sent
     //QString text = ui->clipboardContents->toPlainText();
     QString text = m_clipboard->text();
-    QByteArray byteData = text.toAscii();
+    if (text.isEmpty())
+        return;
+    QString msg = "0x1d0x1e0x1f0x01" + text + "0x1f0x1e0x1d";
+    QByteArray byteData = msg.toAscii();
     char *data = byteData.data();
 
     foreach(QTreeWidgetItem *item, getSelectedItems(ui->peopleList)) {
@@ -288,7 +298,7 @@ void ClipBoard::on_pasteButton_clicked()
         // wrap up the data
         QByteArray block;
         QDataStream out(&block, QIODevice::WriteOnly);
-        out.writeRawData(data, text.length());
+        out.writeRawData(data, msg.length());
 
         // write the data to the socket and disconnect
         s->write(block);
