@@ -154,12 +154,16 @@ void ClipBoard::receiveData()
 
 void ClipBoard::updatePeople(QString senderIP, QString datagram)
 {
-    QRegExp rx("<idmsg>(.*)</idmsg><nick>(.*)</nick>");
-    rx.indexIn(datagram);
-    QString status = rx.cap(1);
-    QString nick = rx.cap(2);
+    //QRegExp rx("<idmsg>(.*)</idmsg><nick>(.*)</nick>");
+    QRegExp rx_st("0x00(.*)0x1f");
+    rx_st.indexIn(datagram);
+    QString status = rx_st.cap(1);
+    //QString nick = rx.cap(2);
 
     if (status.toLower()=="live") {
+        QRegExp rx_nick("0x02(.*)0x00");
+        rx_nick.indexIn(datagram);
+        QString nick = rx_nick.cap(1);
         if (!m_people.contains(senderIP)) {
             m_people[senderIP] = nick;
             QStringList columns;
@@ -176,6 +180,9 @@ void ClipBoard::updatePeople(QString senderIP, QString datagram)
         }
     }
     else if (status.toLower()=="dead") {
+        QRegExp rx_nick("0x03(.*)0x00");
+        rx_nick.indexIn(datagram);
+        QString nick = rx_nick.cap(1);
         QList<QTreeWidgetItem*> items_to_remove = ui->peopleList->findItems(senderIP, Qt::MatchFixedString, UI_IP_COLUMN);
         foreach (QTreeWidgetItem* item, items_to_remove) {
             int index_to_remove = ui->peopleList->indexOfTopLevelItem(item);
@@ -209,7 +216,8 @@ void ClipBoard::readDatagrams()
 
 void ClipBoard::broadcast()
 {
-    _broadcast("<idmsg>LIVE</idmsg><nick>"+m_nick+"</nick>");
+    QString msg = "0x1d0x1e0x1f0x02"+m_nick+"0x00LIVE0x1f0x1e0x1d";
+    _broadcast(msg);
 }
 
 void _broadcast(QString msg)
@@ -248,7 +256,8 @@ void ClipBoard::on_actionQuit_triggered()
     m_tcpServer->close();
     m_udpSocket->close();
     m_broadcastTimer->stop();
-    _broadcast("<idmsg>DEAD</idmsg><nick>"+m_nick+"</nick>");
+    QString msg = "0x1d0x1e0x1f0x03"+m_nick+"0x00DEATH0x1f0x1e0x1d";
+    _broadcast(msg);
     m_people.clear();
     close();
 }
