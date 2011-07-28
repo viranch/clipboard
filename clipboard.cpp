@@ -161,11 +161,9 @@ void ClipBoard::receiveData()
 
 void ClipBoard::updatePeople(QString senderIP, QString datagram)
 {
-    //QRegExp rx("<idmsg>(.*)</idmsg><nick>(.*)</nick>");
     QRegExp rx_st("0x00(.*)0x1f");
     rx_st.indexIn(datagram);
     QString status = rx_st.cap(1);
-    //QString nick = rx.cap(2);
 
     if (status.toLower()=="live") {
         QRegExp rx_nick("0x02(.*)0x00");
