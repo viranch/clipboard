@@ -145,9 +145,9 @@ void ClipBoard::receiveData()
     int len = in.readRawData(data, MAX_DATA_SIZE);
     data[len] = '\0';
     QString string(data);
-    QRegExp rx_msg("0x1d0x1e0x1f0x01(.*)0x1f0x1e0x1d");
+    QRegExp rx_msg("0x1d0x1e0x1f0x01(.*)0x00(.*)0x1f0x1e0x1d");
     rx_msg.indexIn(string);
-    QString msg = rx_msg.cap(1);
+    QString msg = rx_msg.cap(2);
     if (msg.isEmpty())
         return;
 
@@ -285,7 +285,7 @@ void ClipBoard::on_pasteButton_clicked()
     QString text = m_clipboard->text();
     if (text.isEmpty())
         return;
-    QString msg = "0x1d0x1e0x1f0x01" + text + "0x1f0x1e0x1d";
+    QString msg = "0x1d0x1e0x1f0x01" + m_nick + "0x00" + text + "0x1f0x1e0x1d";
     QByteArray byteData = msg.toAscii();
     char *data = byteData.data();
 
